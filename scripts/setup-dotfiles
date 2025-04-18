@@ -1,0 +1,19 @@
+#!/bin/bash
+echo "Setting up Sway config"
+ln -sf $DOTFILES/sway/ $HOME/.config/
+
+echo "Setting up alacritty config"
+ln -sf $DOTFILES/alacritty/alacritty.toml $HOME/.config/
+
+echo "Setting up tmux config"
+ln -sf $DOTFILES/tmux/.tmux.conf $HOME/
+
+echo "Setting up neovim"
+ln -sf $DOTFILES/nvim/ $HOME/.config/
+
+echo "Settings up zsh config"
+ln -sf $DOTFILES/zsh/.zshrc $HOME/
+mkdir -p "$HOME/.zsh"
+git clone https://github.com/sindresorhus/pure.git "$HOME/.zsh/pure"
+
+echo "Finished setting up all .dotfiles!"
