@@ -1,35 +1,32 @@
 ---
 
-- name: Check if dotfiles repository exists
-  ansible.builtin.stat:
-    path: "{{ user_home }}/.dotfiles"
-  register: dotfiles_check
+- name: Get the actual user (even with sudo)
+  ansible.builtin.shell: echo "${SUDO_USER:-$USER}"
+  register: actual_user
+  changed_when: false
   become: false
 
-- name: Clone dotfiles repository (if not already present)
-  ansible.builtin.git:
-    repo: "{{ dotfiles_repo_url }}"
-    dest: "{{ user_home }}/.dotfiles"
-    depth: 1
-    version: "{{ dotfiles_repo_branch | default('main') }}"
-  become: true
-  become_user: "{{ real_user }}"
-  when: not dotfiles_check.stat.exists
+- name: Set user facts correctly
+  ansible.builtin.set_fact:
+    real_user: "{{ actual_user.stdout }}"
+    user_home: "/home/{{ actual_user.stdout }}"
+    dotfiles_path: "{{ dotfiles_path | default(user_home ~ '/.dotfiles') }}"
+  become: false
 
-- name: Update dotfiles repository (if already present)
-  ansible.builtin.git:
-    repo: "{{ dotfiles_repo_url }}"
-    dest: "{{ user_home }}/.dotfiles"
-    update: yes
-    version: "{{ dotfiles_repo_branch | default('main') }}"
+- name: Ensure required directories exist
+  ansible.builtin.file:
+    path: "{{ user_home }}/{{ item.dest | dirname }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ real_user }}"
+    group: "{{ real_user }}"
   become: true
-  become_user: "{{ real_user }}"
-  when: dotfiles_check.stat.exists
-  register: dotfiles_update
+  loop: "{{ dotfiles_symlinks }}"
+  when: "item.dest is defined and '/' in item.dest"
 
 - name: Create symlinks for dotfiles
   ansible.builtin.file:
-    src: "{{ user_home }}/.dotfiles/{{ item.src }}"
+    src: "{{ dotfiles_path }}/{{ item.src }}"
     dest: "{{ user_home }}/{{ item.dest }}"
     state: link
     force: "{{ dotfiles_force_symlinks | default(false) }}"

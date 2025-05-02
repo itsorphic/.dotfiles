@@ -28,8 +28,8 @@ dotfiles_repo_url: "https://github.com/yourusername/dotfiles.git"
 dotfiles_repo_branch: "main"
 dotfiles_force_symlinks: false
 dotfiles_symlinks:
-  - { src: "zsh/.zshrc", dest: ".zshrc" }
-  - { src: "tmux/.tmux.conf", dest: ".tmux.conf" }
+  - { src: ".zshrc", dest: ".zshrc" }
+  - { src: ".tmux.conf", dest: ".tmux.conf" }
   - { src: "alacritty/alacritty.yml", dest: ".config/alacritty/alacritty.yml" }
   - { src: "nvim", dest: ".config/nvim" }
 
