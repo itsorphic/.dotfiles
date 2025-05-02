@@ -1,0 +1,72 @@
+---
+
+- name: Get current username (without become)
+  ansible.builtin.shell: id -un
+  register: real_username
+  changed_when: false
+  become: false
+
+- name: Set user facts correctly
+  ansible.builtin.set_fact:
+    real_user: "{{ real_username.stdout }}"
+    user_home: "/home/{{ real_username.stdout }}"
+  become: false
+
+- name: Check if rate-mirrors is installed
+  ansible.builtin.command: which rate-mirrors
+  register: rate_mirrors_check
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ real_user }}"
+
+- name: Check if paru is installed
+  ansible.builtin.command: which paru
+  register: paru_check
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ real_user }}"
+  when: rate_mirrors_check.rc != 0
+
+- name: Fail if paru is not installed
+  ansible.builtin.fail:
+    msg: "Paru is not installed. Please install paru first using the paru role."
+  when: rate_mirrors_check.rc != 0 and paru_check.rc != 0
+
+- name: Install rate-mirrors using paru
+  ansible.builtin.command: paru -S --noconfirm rate-mirrors
+  register: install_rate_mirrors
+  changed_when: install_rate_mirrors.rc == 0
+  when: rate_mirrors_check.rc != 0 and paru_check.rc == 0
+  become: true
+  become_user: "{{ real_user }}"
+
+- name: Generate temporary rate-mirrors file
+  ansible.builtin.command: rate-mirrors --disable-comments-in-file --save {{ user_home }}/mirrors.txt arch
+  register: rate_mirrors_output
+  changed_when: rate_mirrors_output.rc == 0
+  become: true
+  become_user: "{{ real_user }}"
+  
+- name: Get top mirrors
+  ansible.builtin.shell: cat {{ user_home }}/mirrors.txt | head -n {{ mirrors_count }}
+  register: top_mirrors
+  changed_when: false
+  become: true
+  become_user: "{{ real_user }}"
+
+- name: Update mirrorlist with top mirrors
+  ansible.builtin.copy:
+    content: "{{ top_mirrors.stdout }}"
+    dest: "{{ mirrorlist_path }}"
+  become: true
+  register: mirrorlist_updated
+  notify: Refresh pacman database
+
+- name: Remove temporary mirrors file
+  ansible.builtin.file:
+    path: "{{ user_home }}/mirrors.txt"
+    state: absent
+  become: true
+  become_user: "{{ real_user }}"

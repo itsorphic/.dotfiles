@@ -1,0 +1,47 @@
+---
+
+- name: Configure colors in pacman.conf
+  ansible.builtin.lineinfile:
+    path: "{{ pacman_configuration }}"
+    regexp: '^#Color'
+    line: 'Color'
+  become: true
+  register: color_enabled
+
+- name: Configure parallel downloads in pacman.conf
+  ansible.builtin.lineinfile:
+    path: "{{ pacman_configuration }}"
+    regexp: '^#ParallelDownloads'
+    line: 'ParallelDownloads'
+  become: true
+  register: parallel_downloads_enabled
+
+- name: Install pacman-contrib package
+  ansible.builtin.package:
+    name: pacman-contrib
+    state: present
+  become: true
+
+- name: Create paccache hook directory
+  ansible.builtin.file:
+    path: "{{ paccache_hook_file | dirname }}"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Configure paccache hook
+  ansible.builtin.copy:
+    dest: "{{ paccache_hook_file }}"
+    content: |
+      [Trigger]
+      Operation = Upgrade
+      Operation = Install
+      Operation = Remove
+      Type = Package
+      Target = *
+      [Action]
+      Description = Cleaning pacman cache ...
+      When = PostTransaction
+      Exec = /usr/bin/paccache -r
+    mode: '0644'
+  become: true

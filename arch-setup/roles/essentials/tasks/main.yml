@@ -1,0 +1,19 @@
+---
+
+- name: Import pacman tasks
+  import_tasks: pacman.yml
+
+- name: Import aur tasks
+  import_tasks: aur.yml
+
+- name: Import mirrors tasks
+  import_tasks: mirrors.yml
+
+- name: Import information tasks
+  import_tasks: information.yml
+
+- name: Import terminal tasks
+  import_tasks: terminal.yml
+
+- name: Import fonts tasks
+  import_tasks: fonts.yml

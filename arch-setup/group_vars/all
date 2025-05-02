@@ -1,0 +1,56 @@
+##
+# Pacman & Paru Defaults
+# ======================
+pacman_configuration: /etc/pacman.conf
+paccache_hook_file: /usr/share/libalpm/hooks/paccache.hook
+
+paru_config_path: "{{ ansible_env.HOME }}/.config/paru/paru.conf"
+paru_configure: true
+paru_options:
+  - BottomUp
+  - SudoLoop
+  - Color
+  - PgpFetch
+  - Devel
+
+##
+# Rate Mirrors
+# ============
+mirrorlist_path: /etc/pacman.d/mirrorlist
+mirrors_count: 5
+temp_mirrors_file: "{{ ansible_env.HOME }}/mirrors.txt"
+
+##
+# ZSH
+# ===
+omz_install_dir: "{{ ansible_env.HOME }}"
+zsh_theme: "robbyrussell"
+zsh_plugins:
+  - name: zsh-autosuggestions
+    repo: https://github.com/zsh-users/zsh-autosuggestions
+  - name: zsh-syntax-highlighting
+    repo: https://github.com/zsh-users/zsh-syntax-highlighting
+zsh_aliases:
+  - { alias: "ll", command: "ls -la" }
+  - { alias: "update", command: "sudo pacman -Syu" }
+  - { alias: "aur-update", command: "paru -Sua" }
+
+##
+# Fonts
+# =====
+fonts_user_dir: "{{ ansible_env.HOME }}/.local/share/fonts"
+pacman_fonts:
+  - ttf-dejavu
+  - ttf-liberation
+  - noto-fonts
+  - noto-fonts-cjk
+  - noto-fonts-emoji
+  - ttf-font-awesome
+  - ttf-opensans
+  - ttf-roboto
+  - ttf-ubuntu-font-family
+aur_fonts:
+  - ttf-ms-fonts
+  - ttf-mac-fonts
+  - ttf-google-fonts-git
+

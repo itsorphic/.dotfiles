@@ -1,0 +1,34 @@
+---
+
+- name: Install required utilities
+  ansible.builtin.package:
+    name:
+      - curl
+      - unzip
+      - wget
+    state: present
+  become: true
+
+- name: Install common fonts using pacman
+  ansible.builtin.package:
+    name: "{{ pacman_fonts }}"
+    state: present
+  become: true
+
+- name: Install AUR fonts using paru
+  ansible.builtin.command: paru -S --noconfirm {{ item }}
+  loop: "{{ aur_fonts }}"
+  register: install_aur_fonts
+  become: false
+
+- name: Download and install FiraCode Nerd Font (if not already installed)
+  ansible.builtin.shell: |
+    wget -O firacode.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip"
+    mkdir -p "{{ fonts_user_dir }}/FiraCode"
+    unzip -o firacode.zip -d "{{ fonts_user_dir }}/FiraCode"
+    rm firacode.zip
+    fc-cache -fv
+  args:
+    chdir: /tmp
+  when: not firacode_check.stat.exists
+  become: false

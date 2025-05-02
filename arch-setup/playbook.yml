@@ -6,4 +6,4 @@
   become: true
 
   roles:
-    - { role: base, tags: ['base'] }
+    - { role: essentials, tags: ['essentials'] }

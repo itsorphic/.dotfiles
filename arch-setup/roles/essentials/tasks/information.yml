@@ -1,0 +1,20 @@
+---
+
+- name: Install fastfetch using paru
+  ansible.builtin.command: paru -S --noconfirm fastfetch
+  register: install_fastfetch
+  become: false
+
+- name: Create fastfetch configuration directory
+  ansible.builtin.file:
+    path: "{{ fastfetch_directory }}"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Copy fastfetch configuration
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/fastfetch.jsonc"
+    dest: "{{ fastfetch_configuration }}"
+    mode: '0644'
+  become: false
