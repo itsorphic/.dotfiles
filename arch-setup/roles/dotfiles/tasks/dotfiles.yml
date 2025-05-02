@@ -1,4 +1,5 @@
 ---
+# Role: dotfiles/tasks/dotfiles.yml
 
 - name: Get the actual user (even with sudo)
   ansible.builtin.shell: echo "${SUDO_USER:-$USER}"
@@ -10,8 +11,31 @@
   ansible.builtin.set_fact:
     real_user: "{{ actual_user.stdout }}"
     user_home: "/home/{{ actual_user.stdout }}"
-    dotfiles_path: "{{ dotfiles_path | default(user_home ~ '/.dotfiles') }}"
   become: false
+
+- name: Set dotfiles path
+  ansible.builtin.set_fact:
+    dotfiles_path: "{{ dotfiles_path | default(playbook_dir | dirname) }}"
+  become: false
+
+- name: Check if source files exist
+  ansible.builtin.stat:
+    path: "{{ dotfiles_path }}/{{ item.src }}"
+  register: src_file_check
+  loop: "{{ dotfiles_symlinks }}"
+  loop_control:
+    label: "{{ item.src }}"
+  become: false
+
+- name: Check if destination files exist
+  ansible.builtin.stat:
+    path: "{{ user_home }}/{{ item.item.dest }}"
+  register: dest_file_check
+  loop: "{{ src_file_check.results }}"
+  loop_control:
+    label: "{{ item.item.dest }}"
+  become: false
+  when: item.stat.exists
 
 - name: Ensure required directories exist
   ansible.builtin.file:
@@ -24,14 +48,23 @@
   loop: "{{ dotfiles_symlinks }}"
   when: "item.dest is defined and '/' in item.dest"
 
-- name: Create symlinks for dotfiles
+- name: Backup existing files
+  ansible.builtin.command: mv "{{ user_home }}/{{ item.item.item.dest }}" "{{ user_home }}/{{ item.item.item.dest }}.bak"
+  loop: "{{ dest_file_check.results }}"
+  loop_control:
+    label: "{{ item.item.item.dest }}"
+  become: true
+  when: item.stat is defined and item.stat.exists and item.stat.islnk is defined and not item.stat.islnk
+  
+- name: Create symlinks for dotfiles that exist
   ansible.builtin.file:
-    src: "{{ dotfiles_path }}/{{ item.src }}"
-    dest: "{{ user_home }}/{{ item.dest }}"
+    src: "{{ dotfiles_path }}/{{ item.item.src }}"
+    dest: "{{ user_home }}/{{ item.item.dest }}"
     state: link
-    force: "{{ dotfiles_force_symlinks | default(false) }}"
     owner: "{{ real_user }}"
     group: "{{ real_user }}"
-  loop: "{{ dotfiles_symlinks }}"
+  loop: "{{ src_file_check.results }}"
+  loop_control:
+    label: "{{ item.item.src }} -> {{ item.item.dest }}"
   become: true
-  when: dotfiles_symlinks is defined
+  when: item.stat.exists
