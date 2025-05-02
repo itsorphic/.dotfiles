@@ -3,6 +3,7 @@
 # ======================
 pacman_configuration: /etc/pacman.conf
 paccache_hook_file: /usr/share/libalpm/hooks/paccache.hook
+fastfetch_directory: "{{ ansible_env.HOME }}/.config/fastfetch"
 
 paru_config_path: "{{ ansible_env.HOME }}/.config/paru/paru.conf"
 paru_configure: true
@@ -19,6 +20,18 @@ paru_options:
 mirrorlist_path: /etc/pacman.d/mirrorlist
 mirrors_count: 5
 temp_mirrors_file: "{{ ansible_env.HOME }}/mirrors.txt"
+
+##
+# Dotfiles
+# ========
+dotfiles_repo_url: "https://github.com/yourusername/dotfiles.git"
+dotfiles_repo_branch: "main"
+dotfiles_force_symlinks: false
+dotfiles_symlinks:
+  - { src: "zsh/.zshrc", dest: ".zshrc" }
+  - { src: "tmux/.tmux.conf", dest: ".tmux.conf" }
+  - { src: "alacritty/alacritty.yml", dest: ".config/alacritty/alacritty.yml" }
+  - { src: "nvim", dest: ".config/nvim" }
 
 ##
 # ZSH

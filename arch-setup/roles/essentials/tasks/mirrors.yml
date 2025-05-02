@@ -1,15 +1,15 @@
 ---
 
-- name: Get current username (without become)
-  ansible.builtin.shell: id -un
-  register: real_username
+- name: Get the actual user (even with sudo)
+  ansible.builtin.shell: echo "${SUDO_USER:-$USER}"
+  register: actual_user
   changed_when: false
   become: false
 
 - name: Set user facts correctly
   ansible.builtin.set_fact:
-    real_user: "{{ real_username.stdout }}"
-    user_home: "/home/{{ real_username.stdout }}"
+    real_user: "{{ actual_user.stdout }}"
+    user_home: "/home/{{ actual_user.stdout }}"
   become: false
 
 - name: Check if rate-mirrors is installed
@@ -43,18 +43,17 @@
   become_user: "{{ real_user }}"
 
 - name: Generate temporary rate-mirrors file
-  ansible.builtin.command: rate-mirrors --disable-comments-in-file --save {{ user_home }}/mirrors.txt arch
+  ansible.builtin.shell: |
+    su - {{ real_user }} -c 'rate-mirrors --disable-comments-in-file --save /tmp/mirrors.txt arch'
   register: rate_mirrors_output
   changed_when: rate_mirrors_output.rc == 0
   become: true
-  become_user: "{{ real_user }}"
-  
+
 - name: Get top mirrors
-  ansible.builtin.shell: cat {{ user_home }}/mirrors.txt | head -n {{ mirrors_count }}
+  ansible.builtin.shell: cat /tmp/mirrors.txt | head -n {{ mirrors_count }}
   register: top_mirrors
   changed_when: false
   become: true
-  become_user: "{{ real_user }}"
 
 - name: Update mirrorlist with top mirrors
   ansible.builtin.copy:
@@ -66,7 +65,6 @@
 
 - name: Remove temporary mirrors file
   ansible.builtin.file:
-    path: "{{ user_home }}/mirrors.txt"
+    path: "/tmp/mirrors.txt"
     state: absent
   become: true
-  become_user: "{{ real_user }}"

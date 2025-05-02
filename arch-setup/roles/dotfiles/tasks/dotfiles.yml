@@ -1,0 +1,40 @@
+---
+
+- name: Check if dotfiles repository exists
+  ansible.builtin.stat:
+    path: "{{ user_home }}/.dotfiles"
+  register: dotfiles_check
+  become: false
+
+- name: Clone dotfiles repository (if not already present)
+  ansible.builtin.git:
+    repo: "{{ dotfiles_repo_url }}"
+    dest: "{{ user_home }}/.dotfiles"
+    depth: 1
+    version: "{{ dotfiles_repo_branch | default('main') }}"
+  become: true
+  become_user: "{{ real_user }}"
+  when: not dotfiles_check.stat.exists
+
+- name: Update dotfiles repository (if already present)
+  ansible.builtin.git:
+    repo: "{{ dotfiles_repo_url }}"
+    dest: "{{ user_home }}/.dotfiles"
+    update: yes
+    version: "{{ dotfiles_repo_branch | default('main') }}"
+  become: true
+  become_user: "{{ real_user }}"
+  when: dotfiles_check.stat.exists
+  register: dotfiles_update
+
+- name: Create symlinks for dotfiles
+  ansible.builtin.file:
+    src: "{{ user_home }}/.dotfiles/{{ item.src }}"
+    dest: "{{ user_home }}/{{ item.dest }}"
+    state: link
+    force: "{{ dotfiles_force_symlinks | default(false) }}"
+    owner: "{{ real_user }}"
+    group: "{{ real_user }}"
+  loop: "{{ dotfiles_symlinks }}"
+  become: true
+  when: dotfiles_symlinks is defined

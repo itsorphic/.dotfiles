@@ -15,11 +15,27 @@
     state: present
   become: true
 
+- name: Ensure fonts directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/fonts"
+    state: directory
+    mode: '0755'
+    owner: "{{ real_user }}"
+    group: "{{ real_user }}"
+  become: true
+
 - name: Install AUR fonts using paru
   ansible.builtin.command: paru -S --noconfirm {{ item }}
   loop: "{{ aur_fonts }}"
   register: install_aur_fonts
   become: false
+
+- name: Check if FiraCode Nerd Font is already installed
+  ansible.builtin.stat:
+    path: "{{ user_home }}/.local/share/fonts/FiraCode Nerd Font Complete.ttf"
+  register: firacode_check
+  become: true
+  become_user: "{{ real_user }}"
 
 - name: Download and install FiraCode Nerd Font (if not already installed)
   ansible.builtin.shell: |
@@ -32,3 +48,9 @@
     chdir: /tmp
   when: not firacode_check.stat.exists
   become: false
+
+- name: Update font cache
+  ansible.builtin.command: fc-cache -f
+  changed_when: true
+  become: true
+  become_user: "{{ real_user }}"

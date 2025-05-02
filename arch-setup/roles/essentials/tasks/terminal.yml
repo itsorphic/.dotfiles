@@ -1,43 +1,98 @@
 ---
 
+- name: Get current username
+  ansible.builtin.command: whoami
+  register: current_user
+  changed_when: false
+  become: false
+
+- name: Set user facts
+  ansible.builtin.set_fact:
+    real_user: "{{ current_user.stdout }}"
+    user_home: "/home/{{ current_user.stdout }}"
+  become: false
+
 - name: Install ZSH package
   ansible.builtin.package:
     name: zsh
     state: present
   become: true
 
-- name: Check if Oh My Zsh is installed
+- name: Check if Oh My Zsh is installed and working
   ansible.builtin.stat:
-    path: "{{ omz_install_dir }}/.oh-my-zsh"
+    path: "{{ user_home }}/.oh-my-zsh/oh-my-zsh.sh"
   register: omz_check
+  become: true
+  become_user: "{{ real_user }}"
+
+- name: Install git (required for Oh My Zsh)
+  ansible.builtin.package:
+    name: git
+    state: present
+  become: true
+  when: not omz_check.stat.exists
 
 - name: Install Oh My Zsh
   ansible.builtin.shell: |
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    ZSH= sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   args:
-    creates: "{{ omz_install_dir }}/.oh-my-zsh"
+    creates: "{{ user_home }}/.oh-my-zsh/oh-my-zsh.sh"
   when: not omz_check.stat.exists
-  become: false
+  become: true
+  become_user: "{{ real_user }}"
 
 - name: Install ZSH plugins
   ansible.builtin.git:
     repo: "{{ item.repo }}"
-    dest: "{{ omz_install_dir }}/.oh-my-zsh/custom/plugins/{{ item.name }}"
+    dest: "{{ user_home }}/.oh-my-zsh/custom/plugins/{{ item.name }}"
     clone: yes
     update: yes
   loop: "{{ zsh_plugins }}"
   when: zsh_plugins | length > 0
-  become: false
+  become: true
+  become_user: "{{ real_user }}"
 
 - name: Configure ZSH
   ansible.builtin.template:
     src: zshrc.j2
-    dest: "{{ omz_install_dir }}/.zshrc"
+    dest: "{{ user_home }}/.zshrc"
     backup: yes
-  become: false
+  become: true
+  become_user: "{{ real_user }}"
 
 - name: Set ZSH as default shell
   ansible.builtin.user:
-    name: "{{ ansible_user_id }}"
+    name: "{{ real_user }}"
     shell: /bin/zsh
   become: true
+
+- name: Install tmux
+  ansible.builtin.package:
+    name: tmux
+    state: present
+  become: true
+
+- name: Check if tmux plugin manager (TPM) is installed
+  ansible.builtin.stat:
+    path: "{{ user_home }}/.tmux/plugins/tpm"
+  register: tpm_check
+  become: false
+
+- name: Create tmux plugin directory
+  ansible.builtin.file:
+    path: "{{ user_home }}/.tmux/plugins"
+    state: directory
+    mode: '0755'
+    owner: "{{ real_user }}"
+    group: "{{ real_user }}"
+  become: true
+  when: not tpm_check.stat.exists
+
+- name: Clone tmux plugin manager
+  ansible.builtin.git:
+    repo: https://github.com/tmux-plugins/tpm
+    dest: "{{ user_home }}/.tmux/plugins/tpm"
+    depth: 1
+  become: true
+  become_user: "{{ real_user }}"
+  when: not tpm_check.stat.exists

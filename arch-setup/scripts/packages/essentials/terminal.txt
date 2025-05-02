@@ -1,6 +1,0 @@
-fzf
-bat
-exa
-eva
-fd
-sd

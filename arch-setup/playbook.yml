@@ -6,4 +6,5 @@
   become: true
 
   roles:
-    - { role: essentials, tags: ['essentials'] }
+    - { role: essentials, tags: ['essentials'] },
+    - { role: dotfiles, tags: ['dotfiles'] }
