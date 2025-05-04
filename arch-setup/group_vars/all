@@ -30,7 +30,7 @@ dotfiles_force_symlinks: false
 dotfiles_symlinks:
   - { src: ".zshrc", dest: ".zshrc" }
   - { src: ".tmux.conf", dest: ".tmux.conf" }
-  - { src: "alacritty/alacritty.yml", dest: ".config/alacritty/alacritty.yml" }
+  - { src: "alacritty.toml", dest: ".config/alacritty/alacritty.toml" }
   - { src: "sway", dest: ".config/sway" }
   - { src: "nvim", dest: ".config/nvim" }
 
