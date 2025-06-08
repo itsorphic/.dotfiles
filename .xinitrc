@@ -1,4 +1,4 @@
-feh --recursive --bg-fill --randomize ~/repos/.dotfiles/wallpapers
-picom -b &
+# Set up monitors and wallpapers
+~/.config/scripts/monitor-setup.sh &
 dwmblocks &
 exec dwm
