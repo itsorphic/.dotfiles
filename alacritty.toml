@@ -27,7 +27,7 @@ cyan    = '#89b482'
 white   = '#d4be98'
 
 [window]
-opacity = 0.95
+opacity = 0.97
 padding.x = 10
 padding.y = 10
 

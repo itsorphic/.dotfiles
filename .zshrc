@@ -1,7 +1,7 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="sunaku"
-BRAIN="/home/miguel/Repos/github.com/brainz/"
+BRAIN="/home/miguel/Repos/itsorphic/brainz/"
 
 plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 
